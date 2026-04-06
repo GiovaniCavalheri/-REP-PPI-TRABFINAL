@@ -13,14 +13,13 @@ server.use(
     cookie: {
       secure: false,
       httpOnly: true,
-      maxAge: 11000 * 60 * 30,
+      maxAge: 1000 * 60 * 30,
     },
   }),
 );
 
 let leitores = [];
 let livros = [];
-let emprestimos = [];
 
 server.use(cookieParser());
 server.use(express.urlencoded({ extended: true }));
@@ -238,6 +237,11 @@ server.get("/", autenticado, (req, res) => {
               <li><a class="dropdown-item" href="/CadastroLivros">Cadastrar Livro</a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="/CadastroLeitor">Cadastro de Leitores</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/listaLivros">Lista Livros</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/listaLeitor">Lista Leitores</a></li>
+
             </ul>
           </li>
 
@@ -389,7 +393,12 @@ server.post("/CadastroLivros", autenticado, (req, res) => {
       html += `<div class="alert alert-danger" role="alert">Por favor, informe o ISBN do Livro.</div>`;
     }
 
+    
+
     html += `
+              <button type="submit" class="btn btn-primary w-100 py-2">
+            Cadastrar Leitor
+          </button>
                         </div>
                     </form>
                 </div>
@@ -638,8 +647,67 @@ server.post("/CadastroLeitor", autenticado, (req, res) => {
       nomeLiv: nomeLiv,
     });
 
-    res.redirect("/");
+    res.redirect("/listaLeitor");
   }
+});
+
+server.get("/listaLeitor", autenticado, (req, res) => {
+  const ultimoAcesso =
+    req.cookies?.ultAcesso || "Nenhum acesso anterior identificado.";
+
+  res.write(`
+        <html lang="pt-br">
+            <head>
+                <meta charset="UTF-8">
+                <title>Lista de Leitores</title>
+                <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+            </head>
+            <body>
+                <div class="container mt-5">
+
+                    <p class="text-body-secondary">Último acesso ao sistema: <strong>${ultimoAcesso}</strong></p>
+
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Id</th>
+                                <th scope="col">Nome</th>
+                                <th scope="col">CPF</th>
+                                <th scope="col">Telefone</th>
+                                <th scope="col">Data Empréstimo</th>
+                                <th scope="col">Data Devolução</th>
+                                <th scope="col">Livro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+    `);
+
+  for (let i = 0; i < leitores.length; i++) {
+    const leitor = leitores[i];
+    res.write(`
+            <tr>
+                <td>${i + 1}</td>
+                <td>${leitor.nome}</td>
+                <td>${leitor.CPF}</td>
+                <td>${leitor.phone}</td>
+                <td>${leitor.dataEmp}</td>
+                <td>${leitor.dataDev}</td>
+                <td>${leitor.nomeLiv}</td>
+            </tr>
+        `);
+  }
+
+  res.write(`
+                        </tbody>
+                    </table>
+                    <a href="/CadastroLeitor" class="btn btn-primary">Continuar cadastrando...</a>
+                    <a href="/" class="btn btn-secondary ms-2">Voltar ao menu</a>
+                </div>
+            </body>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+        </html>
+    `);
+  res.end();
 });
 
 function autenticado(req, res, prox) {
